@@ -8,8 +8,8 @@ public class TestModel {
 		// TODO Auto-generated method stub
 
 		Model m = new Model();
-	     
-		Fermata p = m.trovaFermata("La Fourche");
+	     m.creaGrafo();
+		Fermata p =  m.trovaFermata("La Fourche");
 		if(p==null) {
 			System.out.println("Fermata non trovata");
 		}
@@ -17,6 +17,11 @@ public class TestModel {
 			List<Fermata> raggiungibili= m.fermateRaggiungibili(p);
 			System.out.println(raggiungibili);	
 		}
+		
+		Fermata a = m.trovaFermata("Temple");
+		
+		List<Fermata> percorso = m.trovaCammino(p, a);
+		System.out.println(percorso);
 		     }
 
 }

@@ -1,11 +1,18 @@
 package it.polito.tdp.metroparis.model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
+import org.jgrapht.event.ConnectedComponentTraversalEvent;
+import org.jgrapht.event.EdgeTraversalEvent;
+import org.jgrapht.event.TraversalListener;
+import org.jgrapht.event.VertexTraversalEvent;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleGraph;
 import org.jgrapht.traverse.BreadthFirstIterator;
@@ -15,6 +22,8 @@ import it.polito.tdp.metroparis.db.MetroDAO;
 public class Model {
 
 	Graph<Fermata, DefaultEdge> grafo;
+	
+	Map<Fermata,Fermata> predecessore;
 	
 	public void creaGrafo() {
 		this.grafo= new SimpleGraph<>(DefaultEdge.class);
@@ -30,13 +39,13 @@ public class Model {
 		
 		// Aggiungiamo gli archi 
 		// ci restitiusce tutti i vertici VerixSet
-		for(Fermata f1: this.grafo.vertexSet()) {
-			for(Fermata f2: this.grafo.vertexSet()) {
-				if(!f1.equals(f2) && dao.fermateCollegate(f1,f2)) {
-					this.grafo.addEdge(f1, f2);
-				}
-			}
-		}
+//		for(Fermata f1: this.grafo.vertexSet()) {
+//			for(Fermata f2: this.grafo.vertexSet()) {
+//				if(!f1.equals(f2) && dao.fermateCollegate(f1,f2)) {
+//					this.grafo.addEdge(f1, f2);
+//				}
+//			}
+//		}
 		List<Connessione> connessioni =dao.getAllConnessioni(fermate);
 		for(Connessione c: connessioni) {
 			this.grafo.addEdge(c.getStazP(), c.getStazA());
@@ -67,6 +76,55 @@ public class Model {
 		public List<Fermata> fermateRaggiungibili(Fermata partenza) {
 		BreadthFirstIterator<Fermata,DefaultEdge> bfv = new BreadthFirstIterator<>(this.grafo,partenza);
 		// depthFirstIterator<Fermata, Defaultedge> dfv= new DepthFirstIterator<>(this.grafo,partenza);
+		
+		this.predecessore= new HashMap<>();
+		this.predecessore.put(partenza, partenza);
+		bfv.addTraversalListener(new TraversalListener<Fermata,DefaultEdge>(){
+
+			@Override
+			public void connectedComponentFinished(ConnectedComponentTraversalEvent e) {
+				
+				
+			}
+
+			@Override
+			public void connectedComponentStarted(ConnectedComponentTraversalEvent e) {
+			
+				
+			}
+
+			@Override
+			public void edgeTraversed(EdgeTraversalEvent<DefaultEdge> e) {
+			DefaultEdge arco = e.getEdge();
+			Fermata a =grafo.getEdgeSource(arco);
+			Fermata b = grafo.getEdgeTarget(arco);			
+			// ho scoperto 'a' arrivando da 'b' (se 'b' lo conoscevo)
+			if(predecessore.containsKey(b) && !predecessore.containsKey(a)) {
+				predecessore.put(a, b);
+				System.out.println(a+ " scoperto da "+a);
+			}
+			else if(predecessore.containsKey(a) && !predecessore.containsKey(b)){
+			// di sicur conoscevo 'a' e quindi ho scoperto 'b'
+				predecessore.put(b, a);
+			}
+			}
+
+			@Override
+			public void vertexTraversed(VertexTraversalEvent<Fermata> e) {
+//			Fermata nuova= e.getVertex();
+//			Fermata precedente = vertice adiacente a nuova che sia gia raggiunto;
+//			predecessore.put(nuova,precedente);
+//				
+			}
+
+			@Override
+			public void vertexFinished(VertexTraversalEvent<Fermata> e) {
+				
+				
+			}
+			
+		});
+		
 		List<Fermata> result = new ArrayList<>();
 		
 		while(bfv.hasNext()) {
@@ -87,7 +145,19 @@ public class Model {
 			return null;
 			
 		}
+		
+		public List<Fermata> trovaCammino(Fermata partenza, Fermata arrivo) {
+			fermateRaggiungibili(partenza);
+			
+			List<Fermata> result= new LinkedList<>();
+			result.add(arrivo);
+			Fermata f = arrivo;
+			while(predecessore.get(f)!=null) {
+				f= predecessore.get(f);
+			    result.add(0,f);
+			    }
+		return result;
 } 
 
-
+}
 
